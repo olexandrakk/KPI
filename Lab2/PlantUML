@@ -1,0 +1,59 @@
+@startuml
+skinparam actorStyle awesome
+skinparam usecase {
+    BackgroundColor #LightYellow
+    BorderColor #DarkGoldenRod
+}
+skinparam rectangle {
+    BorderColor #DarkGray
+}
+
+actor "Reader" as Reader
+actor "Librarian" as Librarian
+
+Librarian --|> Reader
+
+rectangle "Система оббігу книг (Бібліотека)" {
+
+    usecase "Search for Book" as UC_Search
+    usecase "Request to Borrow Book" as UC_Borrow
+    usecase "Request to Return Book" as UC_Return
+    usecase "View Borrowing History" as UC_ViewHistory
+
+    usecase "Search by Title / Author" as UC_SearchText
+    usecase "Search by Genre" as UC_SearchGenre
+
+    usecase "Process Borrow Request" as UC_ProcessBorrow
+    usecase "Process Return Request" as UC_ProcessReturn
+    usecase "Manage Book Inventory" as UC_ManageBooks
+    usecase "Manage Reader Accounts" as UC_ManageReaders
+
+    usecase "Verify Reader Account" as UC_VerifyReader
+    usecase "Update Book Status (Issued)" as UC_UpdateIssued
+    
+    usecase "Update Book Status (Available)" as UC_UpdateAvailable
+    usecase "Calculate Fines (if any)" as UC_CalculateFines
+}
+
+Reader -- UC_Search
+Reader -- UC_Borrow
+Reader -- UC_Return
+Reader -- UC_ViewHistory
+
+Librarian -- UC_ProcessBorrow
+Librarian -- UC_ProcessReturn
+Librarian -- UC_ManageBooks
+Librarian -- UC_ManageReaders
+
+UC_Search <. UC_SearchText : <<extend>>
+UC_Search <. UC_SearchGenre : <<extend>>
+
+UC_ProcessBorrow ..> UC_Borrow : <<include>>
+UC_ProcessBorrow ..> UC_VerifyReader : <<include>>
+UC_ProcessBorrow ..> UC_UpdateIssued : <<include>>
+UC_ProcessReturn ..> UC_Return : <<include>>
+
+UC_ProcessReturn ..> UC_UpdateAvailable : <<include>>
+UC_ProcessReturn <. UC_CalculateFines : <<extend>>
+
+@enduml
