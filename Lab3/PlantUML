@@ -1,0 +1,58 @@
+@startuml
+title Запит на позику книги
+
+actor Reader
+actor Librarian
+participant "System" as System_Core
+database "DB" as DB
+
+autonumber
+
+Reader -> System_Core : 1. requestBorrow(bookID)
+activate System_Core
+note right
+    Початкова перевірка
+end note
+
+System_Core -> DB : 2. verifyUserStatus(readerID)
+activate DB
+DB --> System_Core : 3. userStatus (Valid / Invalid)
+deactivate DB
+
+alt User is Valid (Can Borrow)
+    System_Core -> DB : 4. checkBookInventory(bookID)
+    activate DB
+    DB --> System_Core : 5. bookAvailability (Available / Not Available)
+    deactivate DB
+
+    alt Book is Available
+        System_Core -> DB : 6. createLoanRecord(bookID, readerID, dueDate)
+        activate DB
+        DB -> DB : 6.1. updateBookStatus('Issued')
+        DB --> System_Core : 7. loanConfirmation(loanID)
+        deactivate DB
+
+        System_Core -> Librarian : 8. notifyIssueSuccess(loanID)
+        
+        System_Core --> Reader : 9. borrowSuccess(dueDate)
+        
+    else Book is Not Available
+        System_Core -> Librarian : 8. notifyLoanFailure('Book Not Available')
+        System_Core --> Reader : 9. bookUnavailableError()
+    end alt
+
+else User is Invalid (e.g., Fines)
+    System_Core -> Librarian : 8. notifyLoanFailure('User Invalid')
+    System_Core --> Reader : 9. userInvalidError(reason)
+end alt
+
+deactivate System_Core
+Librarian -> Reader : 10. physicalBookHandover()
+
+note right of Librarian
+    Бібліотекар контролює
+    видачу книги після 
+    успішної реєстрації в Системі.
+end note
+
+@enduml
