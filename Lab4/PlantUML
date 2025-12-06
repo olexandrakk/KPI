@@ -1,0 +1,47 @@
+@startuml Order_Placement
+
+start
+
+partition "Customer" {
+    :Add product to cart;
+    :Proceed to checkout;
+    :Fill in details (address, contacts);
+    :Select shipping method;
+    :Select payment method;
+    :Confirm order;
+}
+
+partition "Online Store System" {
+    :Create order in database;
+    :Reserve product;
+    :Redirect to payment gateway;
+    :Process payment;
+
+    if (Payment successful?) then (Yes)
+        :Fiscalize payment;
+        fork
+            :Debit product reserve;
+        fork again
+            :Notify Warehouse about new order;
+        end fork
+    else (No)
+        :Notify Customer about error;
+        :Reset product reserve;
+        stop
+    endif
+}
+
+partition "Warehouse" {
+    :Receive order notification;
+    :Check product availability;
+    if (Product is available?) then (Yes)
+        :Complete order picking;
+        :Transfer for dispatch;
+        stop
+    else (No)
+        :Notify System about absence;
+        stop
+    endif
+}
+
+@enduml
