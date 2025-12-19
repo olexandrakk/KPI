@@ -1,0 +1,165 @@
+@startuml
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam linetype ortho 
+
+skinparam component {
+    BackgroundColor White
+    BorderColor Black
+    FontSize 12
+}
+skinparam package {
+    BackgroundColor #FAFAFA
+    BorderColor Gray
+    FontSize 13
+}
+skinparam interface {
+    BackgroundColor White
+    BorderColor Black
+}
+skinparam database {
+    BackgroundColor White
+    BorderColor Black
+}
+
+package "UI Layer (Client)" {
+
+    package "Pages" {
+        package "Auth Page" {
+            component "Login Form" as C_Login
+            component "Register Form" as C_Register
+        }
+        package "Catalog Page" {
+            component "Book List" as C_BookList
+            component "Book Details" as C_BookDet
+        }
+        package "Loan Page" {
+            component "My Loans" as C_Loans
+            component "Return Form" as C_Return
+        }
+        package "Admin Page" {
+            component "Inventory Mgr" as C_Inv
+            component "User Mgr" as C_Users
+        }
+    }
+
+    package "Stores" {
+        component "Auth Store" as S_Auth
+        component "Book Store" as S_Book
+        component "Loan Store" as S_Loan
+        component "User Store" as S_User
+        
+        database "Local Storage" as LS
+        S_Auth -- LS
+    }
+
+    package "Client API" {
+        component "Auth API" as Client_Auth
+        component "Book API" as Client_Book
+        component "Loan API" as Client_Loan
+        component "User API" as Client_User
+    }
+
+    C_Login --> S_Auth
+    C_Register --> S_Auth
+    C_BookList --> S_Book
+    C_Loans --> S_Loan
+    C_Inv --> S_Book
+    
+    S_Auth --> Client_Auth
+    S_Book --> Client_Book
+    S_Loan --> Client_Loan
+    S_User --> Client_User
+}
+
+interface "HTTP API" as I_Http
+
+Client_Auth --> I_Http
+Client_Book --> I_Http
+Client_Loan --> I_Http
+Client_User --> I_Http
+
+package "Gateway" {
+    component "HTTP Router" as Router
+    component "JSON Validator" as Val
+    
+    I_Http - Router
+    Router -down-> Val
+}
+
+package "Backend Modules" {
+
+    package "Auth Module" {
+        interface "Auth EntryPoint" as EP_Auth
+        component "Auth Controller" as Ctrl_Auth
+        component "Auth Service" as Svc_Auth
+        component "Auth Repository" as Repo_Auth
+        
+        Router --> EP_Auth
+        EP_Auth - Ctrl_Auth
+        Ctrl_Auth --> Svc_Auth
+        Svc_Auth --> Repo_Auth
+    }
+
+    package "Book Module" {
+        interface "Book EntryPoint" as EP_Book
+        interface "Book API" as API_Book_Int 
+        
+        component "Book Controller" as Ctrl_Book
+        component "Book Service" as Svc_Book
+        component "Book Repository" as Repo_Book
+
+        Router --> EP_Book
+        EP_Book - Ctrl_Book
+        Ctrl_Book --> Svc_Book
+        Svc_Book --> Repo_Book
+        
+        Svc_Book -up- API_Book_Int
+    }
+
+    package "Loan Module" {
+        interface "Loan EntryPoint" as EP_Loan
+        
+        component "Loan Controller" as Ctrl_Loan
+        component "Loan Service" as Svc_Loan
+        component "Loan Repository" as Repo_Loan
+
+        Router --> EP_Loan
+        EP_Loan - Ctrl_Loan
+        Ctrl_Loan --> Svc_Loan
+        Svc_Loan --> Repo_Loan
+        
+        Svc_Loan ..> API_Book_Int : check stock
+    }
+
+    package "User Module" {
+        interface "User EntryPoint" as EP_User
+        
+        component "User Controller" as Ctrl_User
+        component "User Service" as Svc_User
+        component "User Repository" as Repo_User
+
+        Router --> EP_User
+        EP_User - Ctrl_User
+        Ctrl_User --> Svc_User
+        Svc_User --> Repo_User
+    }
+}
+
+interface "DB Connection" as I_DB
+component "Connection Pool" as Pool
+database "PostgreSQL" as SQL
+
+Repo_Auth --> I_DB
+Repo_Book --> I_DB
+Repo_Loan --> I_DB
+Repo_User --> I_DB
+
+I_DB - Pool
+Pool -> SQL
+
+component "Email Service" as Email
+Svc_Auth ..> Email : send welcome
+Svc_Loan ..> Email : send reminder
+
+@enduml
